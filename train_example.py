@@ -1,53 +1,71 @@
 import numpy as np
+from src.preprocessing.image_preprocessing import preprocess_image
+from src.segmentation.character_segmentation import segment_characters
+from src.recognition.character_recognition import create_cirm_model
 
-# 注意：这个示例仅用于演示目的
-# 实际的汉字识别任务需要更复杂的预处理和模型
+# 硬笔书法评分系统训练示例
+# 演示如何训练字符识别模型
 
 def load_and_prepare_data():
     """
     加载并准备数据用于训练
     """
     print("正在加载数据...")
-    vectors = np.load('all_parsed_data.npy')
-    labels = np.load('all_parsed_data_labels.npy', allow_pickle=True)
+    # 这里应该加载实际的书法数据集
+    # 为了演示目的，我们使用随机数据
+    # 实际应用中应该从data/processed/目录加载处理后的数据
     
-    # 为了演示目的，我们只使用前1000个样本
-    # 实际训练应该使用完整数据集
-    X = vectors[:1000]
-    y = labels[:1000]
+    # 模拟加载数据
+    X = np.random.rand(1000, 64, 64)  # 1000个64x64的字符图像
+    y = np.random.randint(0, 100, 1000)  # 1000个随机标签
     
-    # 简单的标签编码（实际应用中需要更复杂的编码方式）
-    # 这里我们只使用标签的哈希值作为类别标识
-    y_encoded = [hash(label) % 100 for label in y]  # 简化的编码方式
-    
-    return X, y_encoded
+    return X, y
 
-def simple_knn_predict(X_train, y_train, X_test, k=3):
+def train_character_recognition_model(X_train, y_train):
     """
-    简单的K近邻预测实现
-    """
-    predictions = []
-    for test_sample in X_test:
-        # 计算与所有训练样本的距离
-        distances = np.sqrt(np.sum((X_train - test_sample) ** 2, axis=1))
-        
-        # 找到最近的k个邻居
-        nearest_indices = np.argpartition(distances, k)[:k]
-        nearest_labels = [y_train[i] for i in nearest_indices]
-        
-        # 投票决定预测标签
-        prediction = max(set(nearest_labels), key=nearest_labels.count)
-        predictions.append(prediction)
+    训练字符识别模型
     
-    return predictions
+    Args:
+        X_train (numpy.ndarray): 训练数据
+        y_train (numpy.ndarray): 训练标签
+        
+    Returns:
+        model: 训练好的模型
+    """
+    # 创建CIRM模型
+    model = create_cirm_model(input_shape=(64, 64, 1), num_classes=100)
+    
+    # 准备数据
+    X_train = X_train.reshape(-1, 64, 64, 1).astype('float32') / 255.0
+    y_train_categorical = np.eye(100)[y_train]  # 转换为one-hot编码
+    
+    # 训练模型
+    print("正在训练字符识别模型...")
+    model.fit(X_train, y_train_categorical, epochs=5, batch_size=32, verbose=1)
+    
+    return model
 
-def evaluate_predictions(y_true, y_pred):
+def evaluate_model(model, X_test, y_test):
     """
-    评估预测结果
+    评估模型性能
+    
+    Args:
+        model: 训练好的模型
+        X_test (numpy.ndarray): 测试数据
+        y_test (numpy.ndarray): 测试标签
+        
+    Returns:
+        float: 准确率
     """
-    correct = sum(1 for true, pred in zip(y_true, y_pred) if true == pred)
-    accuracy = correct / len(y_true)
-    print(f"准确率: {accuracy:.4f}")
+    # 准备测试数据
+    X_test = X_test.reshape(-1, 64, 64, 1).astype('float32') / 255.0
+    y_test_categorical = np.eye(100)[y_test]  # 转换为one-hot编码
+    
+    # 评估模型
+    print("正在评估模型性能...")
+    loss, accuracy = model.evaluate(X_test, y_test_categorical, verbose=0)
+    print(f"测试准确率: {accuracy:.4f}")
+    
     return accuracy
 
 def main():
@@ -67,27 +85,13 @@ def main():
     print(f"训练集大小: {X_train.shape}")
     print(f"测试集大小: {X_test.shape}")
     
-    # 为了演示目的，我们只使用前50个训练样本和前10个测试样本
-    # 因为完整的KNN计算会很慢
-    X_train_small = X_train[:50]
-    y_train_small = y_train[:50]
-    X_test_small = X_test[:10]
-    y_test_small = y_test[:10]
+    # 训练字符识别模型
+    print("\n正在训练字符识别模型...")
+    model = train_character_recognition_model(X_train, y_train)
     
-    print(f"\n简化训练集大小: {X_train_small.shape}")
-    print(f"简化测试集大小: {X_test_small.shape}")
-    
-    # 使用简单的KNN进行预测
-    print("\n正在使用K近邻算法进行预测...")
-    predictions = simple_knn_predict(X_train_small, y_train_small, X_test_small, k=3)
-    
-    # 评估预测结果
-    print("\n正在评估预测结果...")
-    accuracy = evaluate_predictions(y_test_small, predictions)
-    
-    print("\n预测结果示例:")
-    for i in range(min(5, len(predictions))):
-        print(f"  真实标签: {y_test_small[i]}, 预测标签: {predictions[i]}")
+    # 评估模型性能
+    print("\n正在评估模型性能...")
+    accuracy = evaluate_model(model, X_test, y_test)
     
     print("\n演示完成！")
 

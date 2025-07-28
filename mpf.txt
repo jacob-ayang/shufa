@@ -1,0 +1,50 @@
+File Formats for Image Classification 
+Cheng-Lin Liu 
+NLPR, CASIA 
+June 1, 2005 
+Multiple pattern feature (*.mpf) file 
+Item
+ Type 
+Length 
+Instance 
+File Header 
+Size of Header 
+Long int 
+4B 
+Number of bytes: 
+62+strlen(illustr) 
+Format code 
+ASCII (char*) 
+8B 
+“MPF” 
+Illustration Text 
+Arbitrary 
+“#......\0” 
+Code type 
+ASCII (char*) 
+20B 
+Code length 
+“ASCII”, “GB”, etc. 
+Short int 
+2B 
+Data type 
+1, 2, 4, etc. 
+ASCII (char*) 
+20B 
+“unsigned 
+“float”, etc. 
+Sample number 
+Long int 
+4B  
+char”, 
+“short”, 
+Dimensionality (D) 
+Long int 
+4B  
+Sample Records (concatenated) 
+Label 
+Code type 
+Code length 
+Vector Data type 
+0xFF for garbage 
+D*sizeof(Data type) 
